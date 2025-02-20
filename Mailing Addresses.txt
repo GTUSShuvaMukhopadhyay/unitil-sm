@@ -1,0 +1,52 @@
+import pandas as pd
+import os
+import re
+
+# Create the new columns based on the conditions
+file_path = r"C:\Users\US97684\OneDrive - Grant Thornton LLP\Desktop\Python_file\unitil\Bangor data file v2_12.13.2024.xlsx"
+
+# Read the Excel file and load the specific sheet
+df = pd.read_excel(file_path, sheet_name='MAILING_ADDR1', engine='openpyxl')
+#df_Portion = pd.read_excel(file_path, sheet_name='TE422', engine='openpyxl')
+
+# Initialize df_new as an empty DataFrame
+df_new = pd.DataFrame()
+
+# Column 1: Column B (index 1)
+df_new['CUSTOMERID'] = df.iloc[:, 1].astype(str).str.slice(0, 15)
+
+# Create a sequence number for ADDRESSSEQ
+df_new['ADDRESSSEQ'] = range(1, len(df) + 1)
+
+df_new['MAILINGNAME'] = df.apply(lambda row: str(row.iloc[4]) + str(row.iloc[5]) if row.iloc[16] == 1 else row.iloc[2], axis=1)
+df_new['MAILINGNAME'] = df_new['MAILINGNAME'].str.slice(0, 35)
+
+df_new['INCAREOF'] = df.iloc[:, 6].astype(str).str.slice(0, 35)
+df_new['ADDRESS1'] = df.iloc[:, 7].apply(
+    lambda x: str(x)[:35] if pd.notna(x) and x != '' else str(df.iloc[:, 9])[:35]
+)
+
+df_new['ADDRESS2'] = df.iloc[:, 8].astype(str).str.slice(0, 35)
+df_new['CITY'] = df.iloc[:, 10].astype(str).str.slice(0, 24)
+df_new['STATE'] = df.iloc[:, 11].astype(str).str.slice(0, 2)
+df_new['COUNTRY'] = "TBD"
+
+df_new['POSTALCODE'] = df.apply(
+    lambda row: str(row.iloc[12])[:15] if pd.notna(row.iloc[9]) and row.iloc[9] != '' and re.match(r'^[a-zA-Z0-9]*$', str(row.iloc[9])) else str(row.iloc[13])[:15],
+    axis=1
+)
+
+df_new['UPDATEDATE'] = ""
+
+# Add a trailer row with default values
+trailer_row = pd.DataFrame([['TRAILER', ',,,'] + [''] * (len(df_new.columns) - 2)], 
+                           columns=df_new.columns)
+
+# Append the trailer row to the DataFrame
+df_new = pd.concat([df_new, trailer_row], ignore_index=True)
+
+# Save to CSV
+output_path = r"C:\Users\US97684\OneDrive - Grant Thornton LLP\Desktop\Python_file\unitil\Mailing Addressed.csv"
+df_new.to_csv(output_path, index=False)
+
+print(f"CSV file saved at {output_path}")
