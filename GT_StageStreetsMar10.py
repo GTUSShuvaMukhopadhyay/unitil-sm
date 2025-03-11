@@ -72,11 +72,11 @@ def get_abbreviation_from_last_word(propername, directional_indicators, street_a
         return ""  # Return empty string if no valid street type is found
 
 # Read Excel file (make sure to update the file path)
-file_path = r'C:\Users\US97684\Downloads\documents_20250219\ZMD_PremDetails_CleanData.xlsx'
+file_path = r'\ZMD_PremDetails_CleanData.xlsx'
 df = pd.read_excel(file_path, sheet_name='Sheet1', engine='openpyxl')
 
 # Read the configuration file for street abbreviations
-config_file_path = r'C:\Users\US97684\Downloads\Deviceinfo\configuration.xlsx'  # Update path here
+config_file_path = r'\configuration.xlsx'  # Update path here
 config_df = pd.read_excel(config_file_path)
 
 # Create a dictionary to map street types to their abbreviations (normalized to upper case)
