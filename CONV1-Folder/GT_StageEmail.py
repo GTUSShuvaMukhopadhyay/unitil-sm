@@ -3,7 +3,7 @@ import os
 import csv  # Import csv module for proper formatting
 
 # File path (Update accordingly)
-file_path = r"C:\Users\US97684\Downloads\documents_20250219\ZCAMPAIGN.xlsx"
+file_path = r"ZCAMPAIGN.xlsx"
 
 # Read the Excel file and load the specific sheet
 df = pd.read_excel(file_path, sheet_name='Sheet1', engine='openpyxl')
