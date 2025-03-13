@@ -1,7 +1,32 @@
+# CONV1 - STAGE_PHONE.py
+# STAGE_PHONE.py
+ 
+# NOTES: Update formatting
+ 
 import pandas as pd
 import os
-import csv  # Import csv module for proper CSV formatting
+import re
+import csv  # Import the correct CSV module
  
+# CSV Staging File Checklist
+CHECKLIST = [
+    "✅ Filename must match the entry in Column D of the All Tables tab.",
+    "✅ Filename must be in uppercase except for '.csv' extension.",
+    "✅ The first record in the file must be the header row.",
+    "✅ Ensure no extraneous rows (including blank rows) are present in the file.",
+    "✅ All non-numeric fields must be enclosed in double quotes.",
+    "✅ The last row in the file must be 'TRAILER' followed by commas.",
+    "✅ Replace all CRLF (X'0d0a') in customer notes with ~^[",
+    "✅ Ensure all dates are in 'YYYY-MM-DD' format.",
+]
+ 
+def print_checklist():
+    print("CSV Staging File Validation Checklist:")
+    for item in CHECKLIST:
+        print(item)
+ 
+print_checklist()
+
 # File path (Update accordingly)
 file_path = r"C:\Users\us85360\OneDrive - Grant Thornton LLP\0 - All Work\[c] 15 - Unitil\0_SM Work\Archive\documents_20250219 (2)\ZCAMPAIGN.XLSX"
  
