@@ -1,4 +1,4 @@
-# CONV1 - STAGE_MAIL_ADDR.py
+#314NEWTEST CONV1 - STAGE_MAIL_ADDR.py
 # STAGE_MAIL_ADDR.py
  
 # NOTES: Update formatting
@@ -28,7 +28,7 @@ def print_checklist():
 print_checklist()
  
 # Define input file path
-file_path = r"C:\Users\us85360\Downloads\MA2_Extract.xlsx"
+file_path = r"C:\Users\us85360\Downloads\MA1_Extract.xlsx"
  
 # Read the Excel file and load the specific sheet
 df = pd.read_excel(file_path, sheet_name='Sheet1', engine='openpyxl')
@@ -72,34 +72,40 @@ def generate_address1(row):
 # Apply transformation for ADDRESS1
 df_new['ADDRESS1'] = df.apply(generate_address1, axis=1)
 
-import re
 
-def extract_address2(address1):
-    """
-    Extracts the suite or unit information from ADDRESS1.
-    Looks for keywords like SUITE, STE, UNIT, etc., and captures the number following them.
-    """
-    if not isinstance(address1, str) or address1.strip() == "":
-        return ""  # Return empty if ADDRESS1 is not a valid string
+# Apply transformation for ADDRESS1
+df_new['ADDRESS1'] = df.apply(generate_address1, axis=1)
 
-    # Define a regex pattern to match "SUITE", "STE", "UNIT" followed by a number
-    match = re.search(r'\b(SUITE|STE|UNIT|APT|BLDG|FL|ROOM)\s*\d+\b', address1, re.IGNORECASE)
+def split_address(address):
+    """
+    Splits an address into `ADDRESS1` (street) and `ADDRESS2` (suite/unit info).
+    Extracts terms like SUITE, STE, APT, UNIT, ROOM, FL, BLDG followed by a number.
+    """
+    if not isinstance(address, str) or address.strip() == "":
+        return address, ""  # Return original for empty or non-string values
+
+    # Regex pattern to find SUITE, STE, APT, UNIT, ROOM, etc.
+    pattern = re.compile(r'\b(SUITE|STE|UNIT|APT|BLDG|FL|ROOM)\s*\d+\b', re.IGNORECASE)
+
+    match = pattern.search(address)
 
     if match:
-        return match.group(0)  # Return the matched suite/unit info
-    return ""  # Default to empty if no match is found
+        address1 = pattern.sub('', address).strip().rstrip(',')  # Remove the suite/unit part
+        address2 = match.group(0)  # Extract the suite/unit part
+        return address1, address2
+    return address, ""  # If no suite/unit found, return full address as ADDRESS1, and ADDRESS2 as empty
 
+df_new[['ADDRESS1', 'ADDRESS2']] = df_new['ADDRESS1'].apply(lambda x: pd.Series(split_address(x)))
 
-
-
-df_new['ADDRESS2'] = df_new['ADDRESS1'].apply(extract_address2)
 df_new['CITY'] =  df.iloc[:, 10].astype(str).str.slice(0, 24)
 df_new['STATE'] = df.iloc[:, 11].astype(str).str.slice(0, 2)
 df_new['COUNTRY'] = "US"
-df_new['POSTALCODE'] = "SM WIP"
+# df_new['POSTALCODE'] = "SM WIP"
+df_new['POSTALCODE'] = df.iloc[:, 12].fillna(df.iloc[:, 13])
+
 # df_stage_towns['ZIPCODE'] = df["Zip Code"].astype(str).str.strip().apply(lambda x: f"'0{x.zfill(4)}" if len(x) < 5 else f"'{x}")
 
-df_new['UPDATEDATE'] = "SM WIP"
+df_new['UPDATEDATE'] = ""
 
 # Function to wrap values in double quotes, but leave blanks and NaN as they are
 def custom_quote(val):
@@ -129,7 +135,7 @@ trailer_row = pd.DataFrame([["TRAILER"] + [''] * (len(df_new.columns) - 1)], col
 df_new = pd.concat([df_new, trailer_row], ignore_index=True)
  
 # Define output path for the CSV file
-output_path = os.path.join(os.path.dirname(file_path), 'shuvaSTAGE_MAIL_ADDR.csv')
+output_path = os.path.join(os.path.dirname(file_path), 'STAGE_MAIL_ADDR.csv')
  
 # Save to CSV with proper quoting and escape character
 df_new.to_csv(output_path, index=False, header=True, quoting=csv.QUOTE_NONE, escapechar='\\')
