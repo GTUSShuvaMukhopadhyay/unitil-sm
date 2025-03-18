@@ -49,15 +49,15 @@ df_new = pd.DataFrame()
 
 # Extract ACCOUNTNUMBER from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
-    df_new["ACCOUNTNUMBER"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 6].fillna('').astype(str)
+    df_new["ACCOUNTNUMBER"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].fillna('').astype(str)
 
 # Extract CUSTOMERID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
-    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 4].fillna('').astype(str)
+    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 7].fillna('').astype(str)
 
 # Extract LOCATIONID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
-    df_new["LOCATIONID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 12].fillna('').astype(str)
+    df_new["LOCATIONID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 2].fillna('').astype(str)
 
 # Assign hardcoded values
 df_new["STATUSCODE"] = "0"
