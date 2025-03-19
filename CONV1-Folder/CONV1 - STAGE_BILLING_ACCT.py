@@ -178,6 +178,11 @@ column_order = [
 df_new = df_new[column_order]
 
 
+# Add a trailer row with default values
+trailer_row = pd.DataFrame([["TRAILER"] + [''] * (len(df_new.columns) - 1)], columns=df_new.columns)
+df_new = pd.concat([df_new, trailer_row], ignore_index=True)
+
+
 
 
 
