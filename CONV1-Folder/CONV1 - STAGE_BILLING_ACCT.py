@@ -27,12 +27,12 @@ print_checklist()
 
 # Define file paths
 file_paths = {
-    "ZDM_PREMDETAILS": "C:/Path/To/ZDM_PREMDETAILS.xlsx",
-    "EVER": "C:/Path/To/EVER.xlsx",
-    "DFKKOP": "C:/Path/To/DFKKOP.xlsx",
-    "ZNC_ACTIVE_CUS": "C:/Path/To/ZNC_ACTIVE_CUS.xlsx",
-    "DFKKCOH": "C:/Path/To/DFKKCOH.xlsx",
-    "WRITE_OFF": "C:/Path/To/Write off customer history.XLSX",
+    "ZDM_PREMDETAILS": r"C:\Users\us85360\Desktop\to delete\ZDM_PREMDETAILS.xlsx",
+    "EVER": r"C:\Users\us85360\Desktop\to delete\EVER.xlsx",
+    "DFKKOP": r"C:\Users\us85360\Desktop\to delete\DFKKOP.xlsx",
+    "ZNC_ACTIVE_CUS": r"C:\Users\us85360\Desktop\to delete\ZNC_ACTIVE_CUS.xlsx",
+    "DFKKCOH": r"C:\Users\us85360\Desktop\to delete\DFKKCOH.xlsx",
+    "WRITE_OFF": r"C:\Users\us85360\Desktop\to delete\Write off customer history.XLSX",
 }
 
 # Load the data from each spreadsheet
@@ -49,11 +49,11 @@ df_new = pd.DataFrame()
 
 # Extract ACCOUNTNUMBER from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
-    df_new["ACCOUNTNUMBER"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].fillna('').astype(str)
+    df_new["ACCOUNTNUMBER"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].fillna('').apply(lambda x: str(int(x)) if isinstance(x, (int, float)) else str(x)).str.slice(0, 15)
 
 # Extract CUSTOMERID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
-    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 7].fillna('').astype(str)
+    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 7].fillna('').apply(lambda x: str(int(x)) if isinstance(x, (int, float)) else str(x)).str.slice(0, 15)
 
 # Extract LOCATIONID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
@@ -94,8 +94,10 @@ if data_sources["EVER"] is not None:
 # Extract TERMINATEDDATE from EVER and ensure it is formatted as YYYY-MM-DD
 if data_sources["EVER"] is not None:
     ever_data["M/O Date"] = pd.to_datetime(ever_data.iloc[:, 84], errors='coerce').dt.strftime('%Y-%m-%d')
-    df_new = df_new.merge(ever_data[["ACCOUNTNUMBER", "M/O Date"]], left_on="ACCOUNTNUMBER", right_on="ACCOUNTNUMBER", how="left")
+    df_new = df_new.merge(ever_data[["Cont.Account", "M/O Date"]], left_on="ACCOUNTNUMBER", right_on="Cont.Account", how="left")
     df_new.rename(columns={"M/O Date": "TERMINATEDDATE"}, inplace=True)
+    df_new.drop(columns=["Cont.Account"], inplace=True)  # Drop after merge
+
 
 # Ensure Write off customer history's Cont.Account (Column 1 - B) retains leading zeros
 if data_sources["WRITE_OFF"] is not None:
@@ -122,15 +124,68 @@ def assign_active_code_corrected(account_number):
 # Apply function to determine ACTIVECODE
 df_new["ACTIVECODE"] = df_new["ACCOUNTNUMBER"].apply(assign_active_code_corrected)
 
+# Extract PENALTYCODE from ZNC_ACTIVE_CUS
+if data_sources["ZNC_ACTIVE_CUS"] is not None:
+    penalty_data = data_sources["ZNC_ACTIVE_CUS"]
+    penalty_data["Cont.Account"] = penalty_data.iloc[:, 3].astype(str)  # Column D
+    penalty_data["Fact grp"] = penalty_data.iloc[:, 22].astype(str)  # Column W
+    
+    penalty_mapping = {"RES": "53", "LCI": "55", "LCIT": "55", "SCI": "55", "SCIT": "55"}
+    
+    df_new = df_new.merge(penalty_data[["Cont.Account", "Fact grp"]], left_on="CUSTOMERID", right_on="Cont.Account", how="left")
+    df_new["PENALTYCODE"] = df_new["Fact grp"].map(penalty_mapping).fillna("")
+    df_new.drop(columns=["Cont.Account", "Fact grp"], inplace=True)
+
+
+
+# Extract TAXTYPE from ZNC_ACTIVE_CUS
+if data_sources["ZNC_ACTIVE_CUS"] is not None:
+    tax_mapping = {"RES": "0", "LCI": "1", "LCIT": "1", "SCI": "1", "SCIT": "1"}
+    df_new = df_new.merge(penalty_data[["Cont.Account", "Fact grp"]], left_on="CUSTOMERID", right_on="Cont.Account", how="left")
+    df_new["TAXTYPE"] = df_new["Fact grp"].map(tax_mapping).fillna("")
+    df_new.drop(columns=["Cont.Account", "Fact grp"], inplace=True)
+
+
+
+# Function to wrap values in double quotes, but leave blanks and NaN as they are
+def custom_quote(val):
+    """Wraps all values in quotes except for blank or NaN ones."""
+    # If the value is NaN, None, or blank, leave it empty
+    if pd.isna(val) or val == "" or val == " ":
+        return ''  # Return an empty string for NaN or blank fields
+    return f'"{val}"'  # Wrap other values in double quotes
+ 
+# Apply custom_quote function to all columns
+df_new = df_new.fillna('')
+ 
+def selective_custom_quote(val, column_name):
+    if column_name in ['ACTIVECODE','STATUSCODE','ADDRESSSEQ','PENALTYCODE','TAXCODE','TAXTYPE','ARCODE','BANKCODE','DWELLINGUNITS','STOPSHUTOFF','STOPPENALTY']:
+        return val  # Keep numeric values unquoted
+    return '' if val in [None, 'nan', 'NaN', 'NAN'] else custom_quote(val)
+ 
+df_new = df_new.apply(lambda col: col.map(lambda x: selective_custom_quote(x, col.name)))
+
+# Remove any records missing ACCOUNTNUMBER
+df_new = df_new[df_new['ACCOUNTNUMBER'].notna() & (df_new['ACCOUNTNUMBER'] != '')]
+
+# Drop duplicate records based on ACCOUNTNUMBER, CUSTOMERID, and LOCATIONID
+df_new = df_new.drop_duplicates(subset=['ACCOUNTNUMBER','CUSTOMERID','LOCATIONID'], keep='first')
+
 # Reorder columns based on user preference
 column_order = [
     "ACCOUNTNUMBER", "CUSTOMERID", "LOCATIONID", "ACTIVECODE", "STATUSCODE", "ADDRESSSEQ", "PENALTYCODE", "TAXCODE", "TAXTYPE", "ARCODE", "BANKCODE", "OPENDATE", "TERMINATEDDATE", "DWELLINGUNITS", "STOPSHUTOFF", "STOPPENALTY", "DUEDATE", "SICCODE", "BUNCHCODE", "SHUTOFFDATE", "PIN", "DEFERREDDUEDATE", "LASTNOTICECODE", "LASTNOTICEDATE", "CASHONLY", "NEMLASTTRUEUPDATE", "NEMNEXTTRUEUPDATE", "ENGINEERNUM", "UPDATEDATE"
 ]
 df_new = df_new[column_order]
 
-# Save to CSV
-output_path = "C:/Path/To/STAGE_BILLING_ACCT.csv"
-df_new.to_csv(output_path, index=False, header=True, quoting=csv.QUOTE_NONE, escapechar='\\')
 
+
+
+
+# Define output path for the CSV file
+output_path = os.path.join(os.path.dirname(list(file_paths.values())[0]), 'STAGE_BILLING_ACCT.csv')
+ 
+# Save to CSV with proper quoting and escape character
+df_new.to_csv(output_path, index=False, header=True, quoting=csv.QUOTE_NONE, escapechar='\\')
+ 
 # Confirmation message
 print(f"CSV file saved at {output_path}")
