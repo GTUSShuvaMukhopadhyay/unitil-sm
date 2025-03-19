@@ -36,7 +36,7 @@ def custom_quote(val):
 
 # Apply selective quoting
 def selective_custom_quote(val, column_name):
-    if column_name in ['ACTIVECODE', 'STATUSCODE', 'ADDRESSSEQ', 'PENALTYCODE', 'TAXCODE', 'TAXTYPE', 'ARCODE', 'BANKCODE', 'DWELLINGUNITS', 'STOPSHUTOFF', 'STOPPENALTY', 'LASTNOTICECODE', 'SERVICESTATUS']:
+    if column_name in ['CUSTOMERID', 'LOCATIONID', 'METERNUMBER', 'INITIALSERVICEDATE', 'BILLINGSTARTDATE', 'LASTREADDATE', 'HHCOMMENTS', 'SERVICECOMMENTS', 'USERDEFINED', 'STOPESTIMATE', 'TAMPERCODE', 'UPDATEDATE', 'REMOVEDDATE']:
         return val  # Keep numeric values unquoted
     return '' if val in [None, 'nan', 'NaN', 'NAN'] else custom_quote(val)
 
