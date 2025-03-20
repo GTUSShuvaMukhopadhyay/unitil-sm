@@ -28,7 +28,7 @@ def print_checklist():
 print_checklist()
  
 # Define input file path
-file_path = r"C:\Users\us85360\Downloads\MA1_Extract.xlsx"
+file_path = r"MA1_Extract.xlsx"
  
 # Read the Excel file and load the specific sheet
 df = pd.read_excel(file_path, sheet_name='Sheet1', engine='openpyxl')
