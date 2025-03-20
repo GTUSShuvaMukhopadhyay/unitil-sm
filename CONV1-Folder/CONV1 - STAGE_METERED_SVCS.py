@@ -1,4 +1,4 @@
-#CONV1 - STAGE_METERED_SVCS.py
+# CONV1 - STAGE_METERED_SVCS.py
 # STAGE_METERED_SVCS.py
 
 # we need to exclude the contractids in the list below from our data set ~ will code around it later
@@ -27,24 +27,12 @@ def print_checklist():
 
 print_checklist()
 
-# Function to wrap values in double quotes, but leave blanks and NaN as they are
-def custom_quote(val):
-    """Wraps all values in quotes except for blank or NaN ones."""
-    if pd.isna(val) or val == "" or val == " ":
-        return ''  # Return an empty string for NaN or blank fields
-    return f'"{val}"'  # Wrap other values in double quotes
-
-# Apply selective quoting
-def selective_custom_quote(val, column_name):
-    if column_name in ['CUSTOMERID', 'LOCATIONID', 'METERNUMBER', 'INITIALSERVICEDATE', 'BILLINGSTARTDATE', 'LASTREADDATE', 'HHCOMMENTS', 'SERVICECOMMENTS', 'USERDEFINED', 'STOPESTIMATE', 'TAMPERCODE', 'UPDATEDATE', 'REMOVEDDATE']:
-        return val  # Keep numeric values unquoted
-    return '' if val in [None, 'nan', 'NaN', 'NAN'] else custom_quote(val)
 
 # Define file paths
 file_paths = {
-    "ZDM_PREMDETAILS": "C:/Path/To/ZDM_PREMDETAILS.xlsx",
-    "ZNC_ACTIVE_CUS": "C:/Path/To/ZNC_ACTIVE_CUS.xlsx",
-    "EABL": "C:/Path/To/EABL 01012020 TO 2132025.xlsx",
+    "ZDM_PREMDETAILS": r"C:\Users\us85360\Desktop\to delete\ZDM_PREMDETAILS.xlsx",
+    "ZNC_ACTIVE_CUS": r"C:\Users\us85360\Desktop\to delete\ZNC_ACTIVE_CUS.xlsx",
+    "EABL": r"C:\Users\us85360\Desktop\to delete\EABL 01012020 TO 2132025.XLSX",
 }
 
 # Load the data from each spreadsheet
@@ -61,7 +49,7 @@ df_new = pd.DataFrame()
 
 # Extract CUSTOMERID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
-    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].fillna('').astype(str)
+    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].fillna('').astype(str).str.lstrip('0')
 
 # Extract LOCATIONID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
@@ -84,7 +72,13 @@ BILLINGRATE1_category_mapping = {
     "T_ME_SCISL": "8040",
     "T_ME_LCISL": "8042",
     "T_ME_SCITR": "8040",
-    "T_ME_LCITR": "8042"
+    "T_ME_LCITR": "8042",
+    "G_ME_RESID": "8002",
+    "G_ME_SCISL": "8040",
+    "G_ME_LCISL": "8042",
+    "G_ME_SCITR": "8040",
+    "G_ME_LCITR": "8042"
+
 }
 
 SALESCLASS1_category_mapping = {
@@ -92,7 +86,12 @@ SALESCLASS1_category_mapping = {
     "T_ME_SCISL": "8040",
     "T_ME_LCISL": "8042",
     "T_ME_SCITR": "8240",
-    "T_ME_LCITR": "8242"
+    "T_ME_LCITR": "8242",
+    "G_ME_RESID": "8002",
+    "G_ME_SCISL": "8040",
+    "G_ME_LCISL": "8042",
+    "G_ME_SCITR": "8240",
+    "G_ME_LCITR": "8242"
 }
 
 BILLINGRATE2_category_mapping = {
@@ -100,7 +99,12 @@ BILLINGRATE2_category_mapping = {
     "T_ME_SCISL": "8302",
     "T_ME_LCISL": "8304",
     "T_ME_SCITR": "9800",
-    "T_ME_LCITR": "9800"
+    "G_ME_LCITR": "9800",
+    "G_ME_RESID": "8300",
+    "G_ME_SCISL": "8302",
+    "G_ME_LCISL": "8304",
+    "G_ME_SCITR": "9800",
+    "G_ME_LCITR": "9800"
 }
 
 SALESCLASS2_category_mapping = {
@@ -108,7 +112,12 @@ SALESCLASS2_category_mapping = {
     "T_ME_SCISL": "8040",
     "T_ME_LCISL": "8042",
     "T_ME_SCITR": "8240",
-    "T_ME_LCITR": "8242"
+    "T_ME_LCITR": "8242",
+    "G_ME_RESID": "8002",
+    "G_ME_SCISL": "8040",
+    "G_ME_LCISL": "8042",
+    "G_ME_SCITR": "8240",
+    "G_ME_LCITR": "8242"
 }
 
 # Extract BILLINGRATE1, SALESCLASS1, BILLINGRATE2, and SALESCLASS2 from ZDM_PREMDETAILS
@@ -130,7 +139,7 @@ if data_sources["ZNC_ACTIVE_CUS"] is not None:
 # Extract LASTREADING and LASTREADDATE from ZNC_ACTIVE_CUS
 if data_sources["EABL"] is not None:
     df_new["LASTREADING"] = pd.to_numeric(data_sources["EABL"].iloc[:, 8], errors='coerce')
-    df_new["LASTREADDATE"] = pd.to_datetime(data_sources["EABL"].iloc[:, 8], errors='coerce')
+    df_new["LASTREADDATE"] = pd.to_datetime(data_sources["EABL"].iloc[:, 8], errors='coerce').dt.strftime('%Y-%m-%d')
 
 # Extract MULTIPLIER from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
@@ -143,7 +152,7 @@ df_new["SERVICETYPE"] = "0"
 df_new["METERREGISTER"] = "1"
 df_new["SERVICESTATUS"] = "0"
 df_new["LATITUDE"] = ""
-df_new["READSEQUENCE"] = "0" 
+df_new["READSEQUENCE"] = "0" # NEED UPDATED MAPPING
 df_new["LONGITUDE"] = ""
 df_new["HHCOMMENTS"] = ""
 df_new["SERVICECOMMENTS"] = ""
@@ -160,12 +169,31 @@ df_new["REMOVEDDATE"] = "" # NEED UPDATED MAPPING
 if data_sources["ZDM_PREMDETAILS"] is not None:
     df_new["REMOVEDDATE"] = pd.to_datetime(data_sources["ZDM_PREMDETAILS"].iloc[:, 7], errors='coerce').dt.strftime('%Y-%m-%d')
 
-# Drop duplicate records based on CUSTOMERID and LOCATIONID
-df_new = df_new.drop_duplicates(subset=['CUSTOMERID', 'LOCATIONID'], keep='first')
 
-# Add a trailer row with default values
-trailer_row = pd.DataFrame([["TRAILER"] + [''] * (len(df_new.columns) - 1)], columns=df_new.columns)
-df_new = pd.concat([df_new, trailer_row], ignore_index=True)
+# Function to wrap values in double quotes, but leave blanks and NaN as they are
+def custom_quote(val):
+    """Wraps all values in quotes except for blank or NaN ones."""
+    if pd.isna(val) or val == "" or val == " ":
+        return ''  # Return an empty string for NaN or blank fields
+    return f'"{val}"'  # Wrap other values in double quotes
+
+# Apply custom_quote function to all columns
+df_new = df_new.fillna('')
+
+# Apply selective quoting
+def selective_custom_quote(val, column_name):
+    if column_name in ['CUSTOMERID', 'LOCATIONID', 'METERNUMBER', 'INITIALSERVICEDATE', 'BILLINGSTARTDATE', 'LASTREADDATE', 'HHCOMMENTS', 'SERVICECOMMENTS', 'USERDEFINED', 'STOPESTIMATE', 'TAMPERCODE', 'UPDATEDATE', 'REMOVEDDATE']:
+        return val  # Keep numeric values unquoted
+    return '' if val in [None, 'nan', 'NaN', 'NAN'] else custom_quote(val)
+
+
+df_new = df_new.apply(lambda col: col.map(lambda x: selective_custom_quote(x, col.name)))
+
+
+
+
+# Drop duplicate records based on LOCATIONID, APPLICATION, and SERVICENUMBER
+df_new = df_new.drop_duplicates(subset=['LOCATIONID', 'APPLICATION','SERVICENUMBER'], keep='first')
 
 
 # Reorder columns based on user preference
@@ -181,9 +209,17 @@ column_order = [
 
 df_new = df_new[column_order]
 
-# Save to CSV
-output_path = "C:/Path/To/STAGE_METERED_SVCS.csv"
-df_new.to_csv(output_path, index=False, header=True, quoting=csv.QUOTE_NONE, escapechar='\\')
 
+# Add a trailer row with default values
+trailer_row = pd.DataFrame([["TRAILER"] + [''] * (len(df_new.columns) - 1)], columns=df_new.columns)
+df_new = pd.concat([df_new, trailer_row], ignore_index=True)
+
+
+# Define output path for the CSV file
+output_path = os.path.join(os.path.dirname(list(file_paths.values())[0]), 'STAGE_METERED_SVCS.csv')
+ 
+# Save to CSV with proper quoting and escape character
+df_new.to_csv(output_path, index=False, header=True, quoting=csv.QUOTE_NONE, escapechar='\\')
+ 
 # Confirmation message
 print(f"CSV file saved at {output_path}")
