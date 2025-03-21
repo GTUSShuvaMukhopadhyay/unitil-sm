@@ -30,9 +30,9 @@ print_checklist()
 
 # Define file paths
 file_paths = {
-    "ZDM_PREMDETAILS": r"C:\Users\us85360\Desktop\to delete\ZDM_PREMDETAILS.xlsx",
-    "ZNC_ACTIVE_CUS": r"C:\Users\us85360\Desktop\to delete\ZNC_ACTIVE_CUS.xlsx",
-    "EABL": r"C:\Users\us85360\Desktop\to delete\EABL 01012020 TO 2132025.XLSX",
+    "ZDM_PREMDETAILS":  r"C:\Users\us85360\Desktop\FOLDER\ZDM_PREMDETAILS.XLSX",
+    "ZNC_ACTIVE_CUS": r"C:\Users\us85360\Desktop\FOLDER\ZNC_ACTIVE_CUS.XLSX",
+    "EABL": r"C:\Users\us85360\Desktop\FOLDER\EABL 01012020 TO 2132025.XLSX",
 }
 
 # Load the data from each spreadsheet
@@ -49,7 +49,7 @@ df_new = pd.DataFrame()
 
 # Extract CUSTOMERID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
-    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].fillna('').astype(str).str.lstrip('0')
+    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].fillna('').apply(lambda x: str(int(x)) if isinstance(x, (int, float)) else str(x)).str.slice(0, 15)
 
 # Extract LOCATIONID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
@@ -170,6 +170,10 @@ if data_sources["ZDM_PREMDETAILS"] is not None:
     df_new["REMOVEDDATE"] = pd.to_datetime(data_sources["ZDM_PREMDETAILS"].iloc[:, 7], errors='coerce').dt.strftime('%Y-%m-%d')
 
 
+
+
+
+
 # Function to wrap values in double quotes, but leave blanks and NaN as they are
 def custom_quote(val):
     """Wraps all values in quotes except for blank or NaN ones."""
@@ -182,7 +186,7 @@ df_new = df_new.fillna('')
 
 # Apply selective quoting
 def selective_custom_quote(val, column_name):
-    if column_name in ['CUSTOMERID', 'LOCATIONID', 'METERNUMBER', 'INITIALSERVICEDATE', 'BILLINGSTARTDATE', 'LASTREADDATE', 'HHCOMMENTS', 'SERVICECOMMENTS', 'USERDEFINED', 'STOPESTIMATE', 'TAMPERCODE', 'UPDATEDATE', 'REMOVEDDATE']:
+    if column_name in ['APPLICATION', 'SERVICENUMBER', 'SERVICETYPE', 'METERREGISTER', 'SERVICESTATUS', 'BILLINGRATE1', 'SALESCLASS1', 'BILLINGRATE2', 'SALESCLASS2', 'READSEQUENCE', 'LASTREADING','MULTIPLIER']:
         return val  # Keep numeric values unquoted
     return '' if val in [None, 'nan', 'NaN', 'NAN'] else custom_quote(val)
 
