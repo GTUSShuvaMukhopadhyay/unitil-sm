@@ -1,6 +1,9 @@
 # CONV1 - STAGE_DEPOSITS.py
 # STAGE_DEPOSITS.py
 
+#Issue is LOCATIONID:
+#Issue has been resolved 1018am 03/24/2025
+
 import pandas as pd
 import os
 import csv  # Import the correct CSV module
@@ -26,10 +29,10 @@ print_checklist()
 
 # Define file paths
 file_paths = {
-    "FPD2": r"C"\",
-    "ZDM_PREMDETAILS": r"C:\",
-    "ZMECON": r"C:\",
-    "DFKKOP": r"C:\",
+    "FPD2": r"C:\FPD2.XLSX",
+    "ZDM_PREMDETAILS": r"C:\ZDM_PREMDETAILS.XLSX",
+    "ZMECON": r"C:ZMECON 01012021 to 02132025.xlsx",
+    "DFKKOP": r"C:\DFKKOP 01012024 to 02132025.XLSX",
 }
 
 # Load the data from each spreadsheet
@@ -51,19 +54,40 @@ if data_sources["FPD2"] is not None:
     ).str.slice(0, 15)
     df_new["Contract Account"] = df_new["CUSTOMERID"]  # for merging later
 
-# Extract LOCATIONID from ZDM_PREMDETAILS (Column C), match on Contract Account (FPD2 col L and ZDM col J)
-if data_sources["FPD2"] is not None and data_sources["ZDM_PREMDETAILS"] is not None:
-    # Clean ZDM_PREMDETAILS contract accounts (col J = iloc[:, 9])
-    zdm_ca = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].astype(str).str.lstrip('0').str.strip()
 
-    # Get Premise from col C = iloc[:, 2]
-    zdm_temp = pd.DataFrame({
-        "Contract Account": zdm_ca,
-        "LOCATIONID": data_sources["ZDM_PREMDETAILS"].iloc[:, 2]
-    })
+# --- Assign LOCATIONID based on Contract Account in FPD2 ---
+if data_sources["FPD2"] is not None and data_sources["ZDM_PREMDETAILS"] is not None:
+    fpd2_df = data_sources["FPD2"]
+    zdm_df = data_sources["ZDM_PREMDETAILS"]
+
+    # Extract Contract Account from FPD2 (column L = index 11)
+    fpd2_df["Contract Account"] = fpd2_df.iloc[:, 11].apply(
+        lambda x: str(int(x)) if pd.notna(x) else ""
+    ).str.strip()
+
+    # Clean up Contract Account in ZDM_PREMDETAILS (column J = index 9)
+    zdm_df["Contract Account"] = zdm_df.iloc[:, 9].apply(
+        lambda x: str(int(x)) if pd.notna(x) else ""
+    ).str.strip()
+
+    # Clean up Premise (column C = index 2) for use as LOCATIONID
+    zdm_df["Premise"] = zdm_df.iloc[:, 2].apply(
+        lambda x: str(int(x)) if pd.notna(x) else ""
+    )
+
+    # Create lookup table
+    location_lookup = zdm_df[["Contract Account", "Premise"]].copy()
+    location_lookup = location_lookup.rename(columns={"Premise": "LOCATIONID"})
+
+    # Add cleaned Contract Account to df_new from FPD2
+    df_new["Contract Account"] = fpd2_df["Contract Account"]
 
     # Merge to get LOCATIONID
-    df_new = df_new.merge(zdm_temp, on="Contract Account", how="left")
+    df_new = df_new.merge(location_lookup, how="left", on="Contract Account")
+
+    # Optional: drop Contract Account if you don't need it after the merge
+    df_new.drop(columns=["Contract Account"], inplace=True)
+
 
 # Create DEPOSITSTATUS based on 'Description of Security Deposit Status' (Column K in FPD2)
 if data_sources["FPD2"] is not None:
