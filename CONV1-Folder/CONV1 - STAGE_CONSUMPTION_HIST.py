@@ -1,4 +1,4 @@
-# 2345pm 0323 test CONV1 - STAGE_CONSUMPTION_HIST.py
+# CONV1 - STAGE_CONSUMPTION_HIST.py
 # STAGE_CONSUMPTION_HIST.py
 
 import pandas as pd
@@ -26,12 +26,12 @@ print_checklist()
 
 # Define file paths
 file_paths = {
-    "ZMECON": r"C:\Users\us85360\Desktop\STAGECONSUMPTION\ZMECON 01012021 to 02132025.xlsx",
-    "ZDM_PREMDETAILS": r"C:\Users\us85360\Desktop\STAGECONSUMPTION\ZDM_PREMDETAILS.XLSX",
-    "EABL": r"C:\Users\us85360\Desktop\STAGECONSUMPTION\EABL 01012020 TO 2132025.XLSX",
-    "CD": r"C:\Users\us85360\Desktop\STAGECONSUMPTION\codes and descriptions.xlsx",
-    "MM": r"C:\Users\us85360\Desktop\STAGECONSUMPTION\METERMULTIPLIER_PressureFactor.xlsx",
-    "TF": r"C:\Users\us85360\Desktop\STAGECONSUMPTION\ThermFactor.xlsx",
+    "ZMECON": r"C:\",
+    "ZDM_PREMDETAILS": r"C:\",
+    "EABL": r"C:\",
+    "CD": r"C:\codes and descriptions.xl"
+    "MM": r"C:\METERMULTIPLIER_PressureFactor.xlsx",
+    "TF": r"C:\ThermFactor.xlsx",
 }
 
 # Load the data from each spreadsheet
