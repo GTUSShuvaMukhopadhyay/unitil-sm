@@ -26,10 +26,10 @@ print_checklist()
 
 # Define file paths
 file_paths = {
-    "FPD2": r"C:\Users\us85360\Desktop\STAGEDEPOSITS\FPD2.XLSX",
-    "ZDM_PREMDETAILS": r"C:\Users\us85360\Desktop\STAGEDEPOSITS\ZDM_PREMDETAILS.XLSX",
-    "ZMECON": r"C:\Users\us85360\Desktop\STAGEDEPOSITS\ZMECON 01012021 to 02132025.xlsx",
-    "DFKKOP": r"C:\Users\us85360\Desktop\STAGEDEPOSITS\DFKKOP 01012024 to 02132025.XLSX",
+    "FPD2": r"C"\",
+    "ZDM_PREMDETAILS": r"C:\",
+    "ZMECON": r"C:\",
+    "DFKKOP": r"C:\",
 }
 
 # Load the data from each spreadsheet
