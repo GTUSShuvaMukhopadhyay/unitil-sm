@@ -26,9 +26,9 @@ print_checklist()
 
 # Define file paths
 file_paths = {
-    "DFKKOP": r"C:\Users\us85360\Desktop\STAGE_TRANSACTIONAL_HIST\1DFKKOP01012025TO02282025.XLSX",
-    "ZDM_PREMDETAILS": r"C:\Users\us85360\Desktop\STAGE_TRANSACTIONAL_HIST\ZDM_PREMDETAILS.XLSX",
-    "EVER": r"C:\Users\us85360\Desktop\STAGE_TRANSACTIONAL_HIST\EVER.XLSX",
+    "DFKKOP": r"C:\1DFKKOP01012025TO02282025.XLSX",
+    "ZDM_PREMDETAILS": r"C:\ZDM_PREMDETAILS.XLSX",
+    "EVER": r"C:\EVER.XLSX",
 }
 
 # Load the data from each spreadsheet
