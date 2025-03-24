@@ -30,9 +30,9 @@ print_checklist()
 
 # Define file paths
 file_paths = {
-    "ZDM_PREMDETAILS":  r"C:\Users\us85360\Desktop\FOLDER\ZDM_PREMDETAILS.XLSX",
-    "ZNC_ACTIVE_CUS": r"C:\Users\us85360\Desktop\FOLDER\ZNC_ACTIVE_CUS.XLSX",
-    "EABL": r"C:\Users\us85360\Desktop\FOLDER\EABL 01012020 TO 2132025.XLSX",
+    "ZDM_PREMDETAILS":  r"C:\ZDM_PREMDETAILS.XLSX",
+    "ZNC_ACTIVE_CUS": r"C:\ZNC_ACTIVE_CUS.XLSX",
+    "EABL": r"C:\EABL 01012020 TO 2132025.XLSX",
 }
 
 # Load the data from each spreadsheet
