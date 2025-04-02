@@ -1,10 +1,8 @@
 # CONV1 - STAGE_METERED_SVCS.py
 # STAGE_METERED_SVCS.py
 
-# NOTES:
 # we need to exclude the contractids in the list below from our data set ~ will code around it later
-# ISSUES ARE MULITPLIER AND BILLINGRATE1 not being populated
-# Issues have been resolved but need to better understand the logic around the billingrate to see why it didnt map for the exlcuded values linees 235-237
+# ISSUES ARE MULITPLIER AND BILLINGRATE1
 
 import pandas as pd
 import os
@@ -33,15 +31,12 @@ print_checklist()
 
 # Define file paths
 file_paths = {
-    "ZDM_PREMDETAILS":  r"C:ZDM_PREMDETAILS.XLSX",
-    "ZNC_ACTIVE_CUS": r"ZNC_ACTIVE_CUS.XLSX",
-    "EABL": r"C:\EABL 01012020 TO 2132025.XLSX",
-    "MM": r"C:\METERMULTIPLIER_PressureFactor.xlsx",
+    "ZDM_PREMDETAILS":  r"C:\Users\us85360\Desktop\STAGE_METERED_SVCS\ZDM_PREMDETAILS.XLSX",
+    "ZNC_ACTIVE_CUS": r"C:\Users\us85360\Desktop\STAGE_METERED_SVCS\ZNC_ACTIVE_CUS.XLSX",
+    "EABL": r"C:\Users\us85360\Desktop\STAGE_METERED_SVCS\EABL 01012020 TO 2132025.XLSX",
+    "MM": r"C:\Users\us85360\Desktop\STAGE_METERED_SVCS\METERMULTIPLIER_PressureFactor.xlsx",
 
 }
-
-
-
 
 # Load the data from each spreadsheet
 data_sources = {}
@@ -57,7 +52,7 @@ df_new = pd.DataFrame()
 
 # Extract CUSTOMERID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
-    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 9].fillna('').apply(lambda x: str(int(x)) if isinstance(x, (int, float)) else str(x)).str.slice(0, 15)
+    df_new["CUSTOMERID"] = data_sources["ZDM_PREMDETAILS"].iloc[:, 7].fillna('').apply(lambda x: str(int(x)) if isinstance(x, (int, float)) else str(x)).str.slice(0, 15)
 
 # Extract LOCATIONID from ZDM_PREMDETAILS
 if data_sources["ZDM_PREMDETAILS"] is not None:
@@ -150,25 +145,21 @@ if data_sources["EABL"] is not None:
     df_new["LASTREADDATE"] = pd.to_datetime(data_sources["EABL"].iloc[:, 8], errors='coerce').dt.strftime('%Y-%m-%d')
 
 # --- Assign MULTIPLIER based on METERNUMBER matched to METERMULTIPLIER_PressureFactor.xlsx ---
-if data_sources.get("MM") is not None:
+if data_sources.get("MM") is not None and "Meter #1" in data_sources["MM"].columns and "PressureFactor" in data_sources["MM"].columns:
     mm_df = data_sources["MM"]
 
-    if "Meter #1" in mm_df.columns and "PressureFactor" in mm_df.columns:
-        # Standardize for match
-        mm_df["Meter #1"] = mm_df["Meter #1"].astype(str).str.strip()
-        df_new["METERNUMBER"] = df_new["METERNUMBER"].astype(str).str.strip()
+    # Standardize for match
+    mm_df["Meter #1"] = mm_df["Meter #1"].astype(str).str.strip()
+    df_new["METERNUMBER"] = df_new["METERNUMBER"].astype(str).str.strip()
 
-        # Build dictionary from Meter #1 → PressureFactor
-        meter_to_multiplier = dict(zip(mm_df["Meter #1"], mm_df["PressureFactor"]))
+    # Build dictionary from Meter #1 → PressureFactor
+    meter_to_multiplier = dict(zip(mm_df["Meter #1"], mm_df["PressureFactor"]))
 
-        # Map MULTIPLIER into df_new
-        df_new["MULTIPLIER"] = df_new["METERNUMBER"].map(meter_to_multiplier)
-    else:
-        print("⚠️ Warning: 'MM' file is loaded but missing 'Meter #1' or 'PressureFactor' columns.")
-        df_new["MULTIPLIER"] = ""
+    # Map MULTIPLIER into df_new
+    df_new["MULTIPLIER"] = df_new["METERNUMBER"].map(meter_to_multiplier)
 else:
-    print("⚠️ Warning: 'MM' file not found or failed to load.")
-    df_new["MULTIPLIER"] = ""
+    print("⚠️ Warning: 'MM' file missing 'Meter #1' or 'PressureFactor' columns.")
+
 
 # Assign hardcoded values
 df_new["APPLICATION"] = "5"
@@ -237,8 +228,6 @@ column_order = [
 ]
 
 df_new = df_new[column_order]
-# Exclude rows where BILLINGRATE1 is blank or empty
-df_new = df_new[df_new["BILLINGRATE1"].astype(str).str.strip() != ""]
 
 
 # Add a trailer row with default values
