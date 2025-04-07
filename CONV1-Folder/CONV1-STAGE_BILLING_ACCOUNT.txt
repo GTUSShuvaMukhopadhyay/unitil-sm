@@ -1,0 +1,271 @@
+# 4_1_25 CONV1 - STAGE_BILLING_ACCT.py
+# STAGE_BILLING_ACCT.py
+ 
+ 
+import pandas as pd
+import os
+import re
+import csv  # Import the correct CSV module
+from datetime import datetime
+ 
+# CSV Staging File Checklist
+CHECKLIST = [
+    "✅ Filename must match the entry in Column D of the All Tables tab.",
+    "✅ Filename must be in uppercase except for '.csv' extension.",
+    "✅ The first record in the file must be the header row.",
+    "✅ Ensure no extraneous rows (including blank rows) are present in the file.",
+    "✅ All non-numeric fields must be enclosed in double quotes.",
+    "✅ The last row in the file must be 'TRAILER' followed by commas.",
+    "✅ Replace all CRLF (X'0d0a') in customer notes with ~^[",
+    "✅ Ensure all dates are in 'YYYY-MM-DD' format.",
+]
+ 
+def print_checklist():
+    print("CSV Staging File Validation Checklist:")
+    for item in CHECKLIST:
+        print(item)
+ 
+print_checklist()
+ 
+# Define the file paths
+file_path1 = r"C:\Users\US97684\Downloads\STAGE_BILLING_ACCT\ZDM_PREMDETAILS.XLSX"
+file_path4 = r"C:\Users\US97684\Downloads\STAGE_BILLING_ACCT\EVER.XLSX"
+file_path5 = r"C:\Users\US97684\Downloads\STAGE_BILLING_ACCT\ZNC_ACTIVE_CUS.XLSX"
+file_path6 = r"C:\Users\US97684\Downloads\STAGE_BILLING_ACCT\Write off customer history.XLSX"
+file_path7 = r"C:\Users\US97684\Downloads\STAGE_BILLING_ACCT\ERDK.XLSX"
+ 
+# Read the Excel files
+
+df_Prem= pd.read_excel(file_path1, sheet_name='Sheet1', engine='openpyxl')
+df_EVER = pd.read_excel(file_path4, sheet_name='Sheet1', engine='openpyxl')
+df_ActiveCus = pd.read_excel(file_path5, sheet_name='Sheet1', engine='openpyxl')
+df_WriteOff = pd.read_excel(file_path6, sheet_name='Sheet1', engine='openpyxl')
+df_ERDK = pd.read_excel(file_path7, sheet_name='Sheet1', engine='openpyxl')
+  
+df_new = pd.DataFrame()
+df_new["ACCOUNTNUMBER"] = df_Prem.iloc[:, 9].fillna('').apply(lambda x: str(int(x)) if isinstance(x, (int, float)) else str(x)).str.slice(0, 15)
+df_new["CUSTOMERID"] = df_Prem.iloc[:, 7].fillna('').apply(lambda x: str(int(x)) if isinstance(x, (int, float)) else str(x)).str.slice(0, 15)
+df_new["LOCATIONID"] = df_Prem.iloc[:, 2].fillna('').astype(str)
+#df_new["ACTIVECODE"] = df_EVER.iloc[:, 99].fillna(0).astype(int)  # Column 100 (index 99) for ACTIVECODE in EVER
+df_new["ACTIVECODE"] = ""
+# Ensure that ACCOUNTNUMBER and the columns in df_EVER are in string format for matching
+
+
+# Function to apply the logic to determine ACTIVE code
+def get_active_code(account_number):
+    if not account_number:
+        return "0"  # Or some other default value for empty account numbers
+
+    # Remove leading zeros from the account number
+    account_number_without_leading_zeros = str(int(account_number))  # Remove leading zeros
+
+    # Check if the account number exists in df_ActiveCus (at iloc(3) column)
+    matching_record = df_EVER[df_EVER.iloc[:, 79].astype(str).str.strip() == account_number_without_leading_zeros]
+    
+    # If a matching record exists, get the value from iloc(22)
+    
+    
+    if not matching_record.empty:
+        # Check if there are enough rows
+            ACTIVECODE_DATE = matching_record.iloc[0, 84]  # Column 23 (index 22) value in df_ActiveCus
+        
+            if ACTIVECODE_DATE.year == 9999:
+                return 0
+            else:
+                account_number_without_leading_zeros = str(int(account_number))
+                matching_writeoff = df_WriteOff[df_WriteOff.iloc[:, 1].astype(str).str.strip() == account_number_without_leading_zeros]
+                if not matching_writeoff.empty:
+                    return 4
+                else:
+                    return 2
+        
+            print(f"Warning: Not enough rows in matching_record for account {account_number}")
+            return " "
+    else:
+        return " "
+ 
+# Apply this logic to the "ACTIVECODE" column of df_new
+df_new["ACTIVECODE"] = df_new["ACCOUNTNUMBER"].apply(get_active_code)# Apply this logic to the "ACTIVECODE" column of df_new
+
+
+def format_date(date_value):
+    """Utility function to ensure dates are in 'YYYY-MM-DD' format."""
+    if not date_value or date_value == "0":
+        return None  # Return None for empty or invalid dates
+
+    try:
+        # Check if the date_value is already a valid datetime object
+        if pd.isna(date_value):
+            return None  # Return None if it's a NaT (Not a Time)
+        
+        # If date_value is a valid date, return it in the correct format
+        return pd.to_datetime(date_value, errors='coerce').strftime('%Y-%m-%d') if date_value else None
+    except Exception as e:
+#        print(f"Error formatting date: {e}")
+        return None
+
+#logic for PENALTYCODE
+ 
+def get_penalty_code(account_number):
+    # Check if the account_number is an empty string
+    if not account_number:
+        return "0"  # Or some other default value for empty account numbers
+
+    # Remove leading zeros from the account number
+    account_number_without_leading_zeros = str(int(account_number))  # Remove leading zeros
+
+    # Check if the account number exists in df_ActiveCus (at iloc(3) column)
+    matching_record = df_ActiveCus[df_ActiveCus.iloc[:, 3].astype(str).str.strip() == account_number_without_leading_zeros]
+    
+    # If a matching record exists, get the value from iloc(22)
+    if not matching_record.empty:
+        penalty_code_value = matching_record.iloc[0, 22]  # Column 23 (index 22) value in df_ActiveCus
+        # Check the value of iloc(22) and return corresponding PENALTYCODE
+        if penalty_code_value == "RES":
+            return "53"
+        elif penalty_code_value in ["LCI", "LCIT", "SCI", "SCIT"]:
+            return "55"
+        else:
+            return '55'  # Return the value as-is if no condition matches
+    else:
+        # If no matching record found, return a default value (e.g., "0" or blank)
+        return "55"  # Or choose another default value if needed
+ 
+# Apply this logic to the "PENALTYCODE" column of df_new
+df_new["PENALTYCODE"] = df_new["ACCOUNTNUMBER"].apply(get_penalty_code)
+
+df_new["TAXCODE"] = "0"
+ 
+#tax type
+# Function to apply the logic for PENALTYCODE
+def get_taxtype(account_number):
+    # Check if the account_number is an empty string or invalid
+    if not account_number or not account_number.strip().isdigit():  # Check if empty or non-numeric
+        return "0"  # Or any other default value you wish to return for invalid account numbers
+
+    # Remove leading zeros from the account number
+    account_number_without_leading_zeros = str(int(account_number))  # Remove leading zeros
+
+    # Check if the account number exists in df_ActiveCus (at iloc(3) column)
+    matching_record = df_ActiveCus[df_ActiveCus.iloc[:, 3].astype(str).str.strip() == account_number_without_leading_zeros]
+    
+    # If a matching record exists, get the value from iloc(22)
+    if not matching_record.empty:
+        penalty_code_value = matching_record.iloc[0, 22]  # Column 23 (index 22) value in df_ActiveCus
+        # Check the value of iloc(22) and return corresponding TAXTYPE
+        if penalty_code_value == "RES":
+            return "0"
+        elif penalty_code_value in ["LCI", "LCIT", "SCI", "SCIT"]:
+            return "1"
+        else:
+            return "1"  # Return the value as-is if no condition matches
+    else:
+        # If no matching record found, return a default value (e.g., "0" or blank)
+        return "1"  # Or choose another default value if needed
+ 
+# Apply this logic to the "PENALTYCODE" column of df_new
+df_new["TAXTYPE"] = df_new["ACCOUNTNUMBER"].apply(get_taxtype)
+
+df_new["ARCODE"] = "8"
+df_new["BANKCODE"] = "8"
+ 
+#logic for OPENDATE
+def get_move_in_date(account_number):
+    matching_record = df_EVER[df_EVER.iloc[:, 79].astype(str).str.strip() == account_number]
+ 
+    if not matching_record.empty:
+        moveinDate = matching_record.iloc[0, 83]
+        return moveinDate
+    else:
+        # If no matching record found, return a default value (e.g., "0" or blank)
+        return "0"  # Or choose another default value if needed
+ 
+df_new["OPENDATE"] = df_new["ACCOUNTNUMBER"].apply(get_move_in_date).apply(format_date)
+ 
+ #logic for TERMINATEDDATE
+def get_move_out_date(account_number):
+    matching_record = df_EVER[df_EVER.iloc[:, 79].astype(str).str.strip() == account_number]
+ 
+    if not matching_record.empty:
+        moveoutDate = matching_record.iloc[0, 84]
+        return moveoutDate
+    else:
+        # If no matching record found, return a default value (e.g., "0" or blank)
+        return "0"  # Or choose another default value if needed
+ 
+ #logic for DUEDATE
+def get_due_date(account_number):
+    matching_record = df_ERDK[df_ERDK.iloc[:, 0].astype(str).str.strip() == account_number]
+ 
+    if not matching_record.empty:
+        dueDate = matching_record.iloc[0, 4]
+        return dueDate
+    else:
+        # If no matching record found, return a default value (e.g., "0" or blank)
+        return "0"  # Or choose another default value if needed
+ 
+ 
+df_new["TERMINATEDDATE"] = df_new["ACCOUNTNUMBER"].apply(get_move_out_date).apply(format_date)
+ 
+df_new["DWELLINGUNITS"] = "1"
+df_new["STOPSHUTOFF"] = "0"
+df_new["STOPPENALTY"] = "0"
+ 
+#logic for DueDate from ERDK file
+ 
+df_new["DUEDATE"] = df_new["ACCOUNTNUMBER"].apply(get_due_date).apply(format_date)
+ 
+df_new["SICCODE"] = ""
+df_new["BUNCHCODE"] = ""
+df_new["SHUTOFFDATE"] = ""
+df_new["PIN"] = ""
+df_new["DEFERREDDUEDATE"] = ""
+df_new["LASTNOTICECODE"] = int(0)
+ 
+#logic for last notice  date
+df_new["LASTNOTICEDATE"] = ""
+ 
+ 
+df_new["CASHONLY"] = ""
+df_new["NEMLASTTRUEUPDATE"] = ""
+df_new["NEMNEXTTRUEUPDATE"] = ""
+df_new["ENGINEERNUM"] = ""
+df_new["SERVICEADDRESS3"] = ""
+ 
+# Set today's date
+today_date = datetime.today().strftime('%Y-%m-%d')
+df_new["UPDATEDATE"] = today_date
+ 
+ 
+# Add a trailer row with default values
+trailer_row = pd.DataFrame([['TRAILER'] + [''] * (len(df_new.columns) - 1)],
+                           columns=df_new.columns)
+ 
+# Append the trailer row to the DataFrame
+df_new = pd.concat([df_new, trailer_row], ignore_index=True)
+
+# Set primary key columns (combine to make it unique)
+df_new["PRIMARY_KEY"] = df_new["ACCOUNTNUMBER"] + df_new["CUSTOMERID"] + df_new["LOCATIONID"] + df_new["OPENDATE"]
+
+# Ensure no duplicates based on primary key
+df_new = df_new.drop_duplicates(subset=["PRIMARY_KEY"])
+
+# Save to CSV with custom quoting and escape character
+output_path = r"C:\Users\US97684\Downloads\STAGE_BILLING_ACCT\BVVSM_TEST_1_STAGE_Billing_AccPK.csv"
+ 
+ 
+numeric_columns = [
+    'ACTIVECODE', 'STATUSCODE', 'ADDRESSSEQ', 'PENALTYCODE','TAXCODE','TAXTYPE','ARCODE','BANKCODE','DWELLINGUNITS','STOPSHUTOFF',
+    'STOPPENALTY','SICCODE','LASTNOTICECODE','CASHONLY','ENGINEERNUM'
+]
+ 
+def custom_quote(val, column):
+    # Check if the column is in the list of numeric columns
+    if column in numeric_columns:
+        return val  # No quotes for numeric fields
+    # Otherwise, add quotes for non-numeric fields
+    return f'"{val}"' if val not in ["", None] else val
+df_new = df_new.apply(lambda col: col.apply(lambda val: custom_quote(val, col.name)))
+df_new.to_csv(output_path, index=False, header=True, quoting=csv.QUOTE_NONE)
+ 
+print(f"File successfully saved to: {output_path}")
